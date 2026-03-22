@@ -7,7 +7,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createSubscription } from "@/api/subscription";
 import { useQuery } from "@tanstack/react-query";
 import { fetchPlans, plansQueryKey, type Plan } from "@/api/plan";
-import { fetchMySubscription, mySubscriptionQueryKey } from "@/api/subscription";
+import {
+  fetchMySubscription,
+  mySubscriptionQueryKey,
+  type Subscription,
+} from "@/api/subscription";
 
 type BillingInterval = "monthly" | "yearly";
 
@@ -66,18 +70,29 @@ export default function CheckoutPage() {
 
   const payMutation = useMutation({
     mutationFn: async () => {
-      // Demo payment simulation
       await new Promise((r) => setTimeout(r, 900));
       if (!pendingPlanId) throw new Error("No plan selected");
       return createSubscription(pendingPlanId);
     },
     onSuccess: async () => {
+      const nextPathRaw = localStorage.getItem("pending_next_path");
+      const prior = queryClient.getQueryData<{ subscription: Subscription | null }>(
+        mySubscriptionQueryKey,
+      );
+      const wasExistingSubscriber = Boolean(prior?.subscription);
+
       localStorage.removeItem("pending_plan_id");
       localStorage.removeItem("pending_billing_interval");
       localStorage.removeItem("pending_next_path");
       await queryClient.invalidateQueries({ queryKey: mySubscriptionQueryKey });
-      toast.success("Payment successful. Subscription activated.");
-      router.push("/");
+      toast.success(
+        wasExistingSubscriber
+          ? "Payment successful. Your subscription was updated."
+          : "Payment successful. Subscription activated.",
+      );
+      const nextPath =
+        nextPathRaw && nextPathRaw.startsWith("/") ? nextPathRaw : "/";
+      router.push(nextPath);
     },
     onError: (e: any) => {
       toast.error(e?.message ?? "Payment failed");
@@ -92,10 +107,12 @@ export default function CheckoutPage() {
       <div className="w-full max-w-3xl rounded-3xl border border-border bg-card p-8 md:p-10 space-y-8">
         <div className="space-y-2">
           <h1 className="text-3xl md:text-4xl serif italic text-slate-900 dark:text-slate-100">
-            Demo checkout
+            {hasSubscription ? "Update your plan" : "Demo checkout"}
           </h1>
           <p className="text-sm text-muted-foreground">
-            This is a virtual payment page for testing the subscription flow.
+            {hasSubscription
+              ? "Virtual payment confirms the switch: your previous subscription is ended and the new plan is activated in one step on the server."
+              : "This is a virtual payment page for testing the subscription flow."}
           </p>
         </div>
 
@@ -199,7 +216,11 @@ export default function CheckoutPage() {
               (!canPay || payMutation.isPending) ? "opacity-70 cursor-not-allowed" : "",
             ].join(" ")}
           >
-            {payMutation.isPending ? "Processing payment…" : "Pay & activate"}
+            {payMutation.isPending
+              ? "Processing payment…"
+              : hasSubscription
+                ? "Pay & update subscription"
+                : "Pay & activate"}
           </button>
         </div>
       </div>
