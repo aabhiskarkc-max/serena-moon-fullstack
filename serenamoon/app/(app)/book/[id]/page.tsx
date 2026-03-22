@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { ArrowLeft, BookOpen, FileWarning, Loader2, Info } from "lucide-react";
+import {  BookOpen, FileWarning, Loader2 } from "lucide-react";
 import {
   ebookCatalogItemQueryKey,
   fetchEbookCatalogItem,
@@ -38,7 +38,7 @@ function apiMessage(e: unknown, fallback: string) {
 
 function ReaderChromeSkeleton() {
   return (
-    <div className="animate-pulse space-y-8">
+    <div className="animate-pulse space-y-2">
       <div className="flex items-center justify-between">
         <div className="h-8 w-32 rounded-full bg-muted" />
         <div className="h-8 w-8 rounded-full bg-muted" />
@@ -95,36 +95,13 @@ export default function EbookReaderPage() {
   const showEpub = buffer && displayMime === "application/epub+zip";
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-5xl px-4 py-6 sm:px-6 lg:py-10">
-      {/* --- Sticky Header Navigation --- */}
-      <nav className="sticky top-0 z-30 mb-8 flex items-center justify-between rounded-2xl border border-border/50 bg-background/80 p-2 backdrop-blur-md shadow-sm">
-        <Button variant="ghost" size="sm" className="rounded-xl gap-2 text-muted-foreground hover:text-foreground" asChild>
-          <Link href="/ebook">
-            <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline text-xs font-bold uppercase tracking-wider">Library</span>
-          </Link>
-        </Button>
-
-        {book && (
-          <div className="flex flex-col items-center px-4 text-center">
-            <h2 className="line-clamp-1 max-w-[200px] text-[13px] font-bold sm:max-w-md">
-              {book.title}
-            </h2>
-          </div>
-        )}
-
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl text-muted-foreground">
-            <Info className="h-4 w-4" />
-          </Button>
-        </div>
-      </nav>
+    <div className="mx-auto min-h-screen w-full max-w-5xl ">
 
       {metaQuery.isPending ? (
         <ReaderChromeSkeleton />
       ) : metaQuery.isError ? (
-        <div className="flex flex-col items-center justify-center rounded-3xl border border-destructive/20 bg-destructive/5 px-6 py-20 text-center">
-          <div className="rounded-2xl bg-destructive/10 p-4">
+        <div className="flex flex-col items-center justify-center  bg-destructive/5  text-center">
+          <div className=" bg-destructive/10 ">
             <FileWarning className="h-8 w-8 text-destructive" />
           </div>
           <h1 className="mt-6 text-xl font-bold tracking-tight">Access Denied</h1>
@@ -136,10 +113,10 @@ export default function EbookReaderPage() {
           </Button>
         </div>
       ) : book ? (
-        <main className="space-y-6">
+        <main className="">
           <section aria-label="Book content" className="relative">
             {fileLoading ? (
-              <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 rounded-3xl border border-border bg-muted/5 py-20">
+              <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4  bg-muted/5 py-20">
                 <div className="relative flex items-center justify-center">
                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
                    <BookOpen className="absolute h-5 w-5 text-primary/40" />
@@ -158,7 +135,7 @@ export default function EbookReaderPage() {
                 </Button>
               </div>
             ) : showPdf ? (
-              <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-2xl transition-all">
+              <div className="overflow-hidden rounded-2xl  bg-card shadow-2xl transition-all">
                 <EbookPdfViewer data={buffer} title={book.title} />
               </div>
             ) : showEpub ? (
@@ -188,14 +165,7 @@ export default function EbookReaderPage() {
         </main>
       ) : null}
       
-      {/* --- Footer Status --- */}
-      {book && !fileLoading && !fileError && (
-        <footer className="mt-8 flex items-center justify-center gap-4 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50">
-           <span>Secure Reader</span>
-           <span className="h-1 w-1 rounded-full bg-muted-foreground/30" />
-           <span>End-to-End Encrypted</span>
-        </footer>
-      )}
+     
     </div>
   );
 }

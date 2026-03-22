@@ -6,12 +6,10 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-// Must match the pdf.js API bundled with `react-pdf` (not a separately installed `pdfjs-dist`).
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 type Props = {
   data: ArrayBuffer;
-  /** Used for accessible labeling only */
   title?: string;
 };
 
@@ -23,7 +21,7 @@ export function EbookPdfViewer({ data, title }: Props) {
 
   useEffect(() => {
     const update = () => {
-      setPageWidth(Math.max(280, Math.min(900, window.innerWidth - 56)));
+      setPageWidth(Math.min(900, window.innerWidth - 32));
     };
     update();
     window.addEventListener("resize", update);
@@ -38,10 +36,9 @@ export function EbookPdfViewer({ data, title }: Props) {
 
   useEffect(() => {
     setPageInput(String(pageNumber));
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, [pageNumber]);
 
-  // Copy bytes so pdf.js worker transfer doesn't detach the parent ArrayBuffer; memoize the
-  // `file` object so <Document /> doesn't see a new reference every render.
   const file = useMemo(() => ({ data: new Uint8Array(data.slice(0)) }), [data]);
 
   const goToPage = useCallback(() => {
@@ -52,88 +49,58 @@ export function EbookPdfViewer({ data, title }: Props) {
     setPageInput(String(clamped));
   }, [pageInput, numPages]);
 
-  const label = title ? `PDF: ${title}` : "PDF document";
-
   return (
-    <div
-      className="overflow-hidden rounded-2xl border border-border/80 bg-muted/30 shadow-sm ring-1 ring-black/5 dark:ring-white/10"
-      onContextMenu={(e) => e.preventDefault()}
-      style={{ userSelect: "none" }}
-    >
-      <div className="sticky top-0 z-10 flex flex-col gap-3 border-b border-border/80 bg-background/85 px-3 py-3 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 sm:flex-row sm:items-center sm:justify-between sm:px-4">
-        <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="h-9 w-9 shrink-0"
-            disabled={pageNumber <= 1}
-            onClick={() => setPageNumber((p) => Math.max(1, p - 1))}
-            aria-label="Previous page"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground sm:text-sm">Page</span>
-            <Input
-              className="h-9 w-14 text-center tabular-nums"
-              inputMode="numeric"
-              aria-label="Page number"
-              value={pageInput}
-              onChange={(e) => setPageInput(e.target.value.replace(/\D/g, ""))}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") goToPage();
-              }}
-              onBlur={goToPage}
-            />
-            <span className="text-xs tabular-nums text-muted-foreground sm:text-sm">
-              of {numPages > 0 ? numPages : "—"}
-            </span>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="h-9 w-9 shrink-0"
-            disabled={numPages === 0 || pageNumber >= numPages}
-            onClick={() => setPageNumber((p) => Math.min(numPages, p + 1))}
-            aria-label="Next page"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-        <p className="hidden text-center text-[11px] text-muted-foreground sm:block sm:text-left sm:text-xs">
-          Read in app · selection and context menu limited
-        </p>
-      </div>
-
-      <div
-        className="flex justify-center overflow-auto bg-[#e8e4dc] py-8 dark:bg-zinc-950/80"
-        aria-label={label}
-      >
+    <div className="relative flex flex-col w-full bg-[#e8e4dc] dark:bg-zinc-950">
+      <div className="flex justify-center pb-2">
         <Document
-          className="max-w-full"
           file={file}
           onLoadSuccess={onDocumentLoadSuccess}
-          loading={
-            <p className="px-4 py-16 text-sm text-muted-foreground dark:text-zinc-400">
-              Opening PDF…
-            </p>
-          }
-          error={
-            <p className="px-4 py-16 text-sm text-destructive">
-              We couldn&apos;t render this PDF. Try again later.
-            </p>
-          }
+          loading={<div className="h-[60vh] flex items-center justify-center text-sm">Loading...</div>}
         >
           <Page
             pageNumber={pageNumber}
             width={pageWidth}
             renderTextLayer={false}
             renderAnnotationLayer={false}
-            className="shadow-lg ring-1 ring-black/10 dark:ring-white/10"
+            className="shadow-md border border-black/5"
           />
         </Document>
+      </div>
+
+      <div className="sticky bottom-4 mx-auto mb-6 z-50">
+        <div className="flex items-center gap-1.5 rounded-full border border-border/50 bg-background/90 p-1.5 shadow-2xl backdrop-blur-md ring-1 ring-black/5">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 rounded-full"
+            disabled={pageNumber <= 1}
+            onClick={() => setPageNumber((p) => p - 1)}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+
+          <div className="flex items-center px-1 text-[12px] font-medium tabular-nums">
+            <Input
+              className="h-6 w-9 border-none bg-transparent p-0 text-center text-[12px] focus-visible:ring-0"
+              value={pageInput}
+              onChange={(e) => setPageInput(e.target.value.replace(/\D/g, ""))}
+              onKeyDown={(e) => e.key === "Enter" && goToPage()}
+              onBlur={goToPage}
+            />
+            <span className="text-muted-foreground mx-1">/</span>
+            <span>{numPages || "—"}</span>
+          </div>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 rounded-full"
+            disabled={pageNumber >= numPages}
+            onClick={() => setPageNumber((p) => p + 1)}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );
