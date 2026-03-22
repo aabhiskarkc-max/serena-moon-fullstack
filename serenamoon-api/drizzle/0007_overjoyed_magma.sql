@@ -1,0 +1,1 @@
+ALTER TABLE "ebooks" DROP COLUMN "visibility";

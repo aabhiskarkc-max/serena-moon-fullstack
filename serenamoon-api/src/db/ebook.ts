@@ -1,5 +1,5 @@
 import { pgTable, uuid, text, timestamp } from "drizzle-orm/pg-core";
-import { visibilityEnum } from "./enums";
+import { plans } from "./plan";
 
 export const ebooks = pgTable("ebooks", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -14,7 +14,7 @@ export const ebooks = pgTable("ebooks", {
 
   fileUrl: text("file_url").notNull(),
 
-  visibility: visibilityEnum("visibility").default("free"),
+  planId: uuid("plan_id").references(() => plans.id, { onDelete: "set null" }),
 
   createdAt: timestamp("created_at").defaultNow(),
 });

@@ -72,7 +72,7 @@ export class MediaService {
   async uploadMedia(
     fileBuffer: Buffer,
     folder: string,
-    resourceType: 'image' | 'video' = 'image',
+    resourceType: 'image' | 'video' | 'raw' = 'image',
   ): Promise<MediaUploadResult> {
     if (!this.isConfigured) {
       this.logger.error('Media upload attempted but Cloudinary is not configured.');
